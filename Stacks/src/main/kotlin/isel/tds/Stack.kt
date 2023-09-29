@@ -1,21 +1,55 @@
 package isel.tds
 
-class Stack<T> private constructor(private val head: Node<T>?) {
-    val top: T get() = first.elem
+interface Stack<T> : Iterable<T> {
+    val top: T
+    fun push(elem: T): Stack<T>
+    fun pop(): Stack<T>
+    fun isEmpty(): Boolean
 
-    private val first: Node<T> get() = head ?: throw NoSuchElementException("Stack is empty.")
 
-    private class Node<T>(val elem: T, val next: Node<T>?)
+}
 
-    constructor() : this(null)
+fun <T> stack(): Stack<T> = StackEmpty as Stack<T>
 
-    fun push(elem: T): Stack<T> = Stack(Node(elem, head))
+private class Node<T>(val elem: T, val next: Node<T>?)
 
-    fun isEmpty(): Boolean = head == null
-    fun pop(): Stack<T> = Stack(first.next)
+private object StackEmpty : Stack<Any> {
+    override val top: Nothing get() = throwEmpty()
 
-    fun pop2(): Pair<T, Stack<T>> = Pair(top, Stack(first.next))
-//    fun pop2(): Pair<T, Stack<T>> = top to Stack(first.next)
+    override fun pop(): Nothing = throwEmpty()
+
+    private fun throwEmpty(): Nothing = throw NoSuchElementException()
+
+
+    override fun isEmpty() = true
+
+    override fun push(elem: Any) = StackNotEmpty(Node(elem, null))
+    
+
+    override fun iterator() = object : Iterator<Nothing> {
+        override fun hasNext() = false
+        override fun next() = throwEmpty()
+    }
+
+
+}
+
+private class StackNotEmpty<T>(private val head: Node<T>) : Stack<T> {
+    override val top: T get() = head.elem
+
+    override fun pop(): Stack<T> =
+        head.next?.let { StackNotEmpty(it) } ?: stack()
+
+    override fun isEmpty() = false
+
+    override fun push(elem: T) = StackNotEmpty(Node(elem, head))
+    override fun iterator() = object : Iterator<T> {
+        var node: Node<T>? = head
+        override fun hasNext() = node != null
+        override fun next() =
+            (node ?: throw NoSuchElementException("no more elements"))
+                .also { node = it.next }.elem
+    }
 
 
 }
