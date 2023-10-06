@@ -11,7 +11,7 @@ hide empty members
 
 -class Node<T> {
     +elem: T
-    +next: Node<T>
+'    +next: Node<T>
 }
 Node "0..1" <-- Node : +next
 

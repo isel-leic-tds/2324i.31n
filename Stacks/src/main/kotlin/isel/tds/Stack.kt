@@ -16,7 +16,7 @@ private class Node<T>(val elem: T, val next: Node<T>?)
 private object StackEmpty : Stack<Any> {
     override val top: Nothing get() = throwEmpty()
 
-    override fun pop(): Nothing = throwEmpty()
+    override fun pop() = throwEmpty()
 
     private fun throwEmpty(): Nothing = throw NoSuchElementException()
 
@@ -24,7 +24,7 @@ private object StackEmpty : Stack<Any> {
     override fun isEmpty() = true
 
     override fun push(elem: Any) = StackNotEmpty(Node(elem, null))
-    
+
 
     override fun iterator() = object : Iterator<Nothing> {
         override fun hasNext() = false
@@ -52,4 +52,30 @@ private class StackNotEmpty<T>(private val head: Node<T>) : Stack<T> {
     }
 
 
+}
+
+//fun <T> stackOf(vararg elements: T): Stack<T> {
+//    var stk = stack<T>()
+//    for (e in elements) stk = stk.push(e)
+//    return stk
+//}
+//fun <T> stackOf(vararg elements: T): Stack<T> {
+//    return elements.fold(stack<T>(), { s, e -> s.push(e)})
+//}
+
+//fun <T> stackOf(vararg elements: T): Stack<T> {
+//    if (elements.isEmpty()) return stack()
+//    var n: Node<T>? = null
+//    for (e in elements) n = Node(e, n)
+//    return StackNotEmpty<T>(n as Node<T>)
+//}
+
+fun <T> stackOf(vararg elements: T): Stack<T> {
+    if (elements.isEmpty()) return stack()
+    return StackNotEmpty<T>(
+        elements.fold(
+            null as Node<T>?
+        )
+        { n, e -> Node(e, n) }
+                as Node<T>)
 }
