@@ -1,0 +1,40 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+interface Score{
+    +next(winner: Player): Score
+    +isGame: Boolean
+    +placard: String
+}
+
+class ByPoints
+object Deuce
+class Advantage
+class Game
+
+Score <|.. ByPoints
+Score <|.. Deuce
+Score <|.. Advantage
+Score <|.. Game
+
+ByPoints o-- Points : pointsA
+ByPoints o-- Points : pointsB
+
+Advantage o-- Player: player
+Game o-- Player: player
+
+enum Player {
+    A
+    B
+}
+
+enum Points{
+    LOVE
+    FIFTEEN
+    THIRTY
+    FORTY
+    ADVANTAGE
+    GAME
+}
+
+@enduml

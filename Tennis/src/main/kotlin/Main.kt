@@ -1,6 +1,5 @@
-import isel.tds.tennis.initialScore
+import isel.tds.tennis._01_singleClass.initialScore
 import isel.tds.tennis.outputPlacard
-import isel.tds.tennis.placard
 import isel.tds.tennis.readWinner
 
 fun main(args: Array<String>) {
@@ -8,9 +7,11 @@ fun main(args: Array<String>) {
 
     var score = initialScore()
     do{
-        outputPlacard( score.placard())
+        outputPlacard(score.placard)
         score = score.next(readWinner())
-    }while(true)
+    } while (score.isGame)
+    outputPlacard("Final result")
+    outputPlacard(score.placard)
 }
 
 
