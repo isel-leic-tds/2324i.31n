@@ -1,16 +1,9 @@
 package isel.tds.tennis._01_singleClass
 
-import isel.tds.tennis._01_singleClass.Points.*
+import isel.tds.tennis.Player
+import isel.tds.tennis.Points
+import isel.tds.tennis.Points.*
 
-enum class Player {
-    A, B
-}
-
-enum class Points(val value: Int) {
-    LOVE(0), FIFTEEN(15), THIRTY(30), FORTY(40), ADVANTAGE(50), GAME(60);
-
-    fun next(): Points = values()[ordinal + 1]
-}
 
 class Score private constructor(val pointsA: Points, val pointsB: Points) {
     constructor () : this(LOVE, LOVE)
@@ -20,7 +13,6 @@ class Score private constructor(val pointsA: Points, val pointsB: Points) {
     }
 
     fun next(winner: Player): Score = when {
-        //TODO: handle other special cases
         winner == Player.A && pointsB == ADVANTAGE -> Score(FORTY, FORTY)
         winner == Player.B && pointsA == ADVANTAGE -> Score(FORTY, FORTY)
         winner == Player.A && pointsA == FORTY && pointsB != FORTY -> Score(GAME, pointsB)

@@ -1,16 +1,9 @@
 package isel.tds.tennis._02_oo
 
-import isel.tds.tennis._02_oo.Points.*
+import isel.tds.tennis.Player
+import isel.tds.tennis.Points
+import isel.tds.tennis.Points.*
 
-enum class Player {
-    A, B
-}
-
-enum class Points(val value: Int) {
-    LOVE(0), FIFTEEN(15), THIRTY(30), FORTY(40), ADVANTAGE(50), GAME(60);
-
-    fun next(): Points = entries[ordinal + 1]
-}
 
 interface Score {
     fun next(winner: Player): Score

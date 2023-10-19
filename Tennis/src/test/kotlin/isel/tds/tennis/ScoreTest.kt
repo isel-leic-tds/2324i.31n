@@ -1,9 +1,14 @@
 package isel.tds.tennis
 
-//import isel.tds.tennis._01_singleClass.Player
+//import isel.tds.tennis.Player
 //import isel.tds.tennis._01_singleClass.initialScore
-import isel.tds.tennis._02_oo.Player
-import isel.tds.tennis._02_oo.initialScore
+//import isel.tds.tennis._02_oo.Player
+//import isel.tds.tennis._02_oo.initialScore
+//import isel.tds.tennis._03_pm.initialScore
+//import isel.tds.tennis._03_pm.isGame
+//import isel.tds.tennis._03_pm.next
+//import isel.tds.tennis._03_pm.placard
+import isel.tds.tennis._04_fp.initialScore
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test

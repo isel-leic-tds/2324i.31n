@@ -1,7 +1,5 @@
 package isel.tds.tennis
 
-import isel.tds.tennis._01_singleClass.Player
-
 
 fun readWinner(): Player {
     return Player.valueOf(readWinnerRecursive().toString())
