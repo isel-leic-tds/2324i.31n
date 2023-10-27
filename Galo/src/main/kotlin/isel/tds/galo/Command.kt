@@ -2,6 +2,7 @@ package isel.tds.galo
 
 import isel.tds.galo.model.Board
 import isel.tds.galo.model.play
+import isel.tds.galo.model.toPosition
 
 abstract class Command {
     open val isToFinish: Boolean = false
@@ -15,7 +16,7 @@ object PlayCommand : Command() {
 
         val arg = requireNotNull(args.firstOrNull()) { "Missing index" }
         val playIdx = requireNotNull(arg.toIntOrNull()) { "Invalid index $arg" }
-        return board.play(playIdx)
+        return board.play(playIdx.toPosition())
     }
 }
 
