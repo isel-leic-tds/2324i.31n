@@ -34,3 +34,13 @@ fun Board.show() {
         is BoardDraw -> println("Draw")
     }
 }
+
+fun Game.show() = board?.show()
+
+fun Game.showScore() {
+    print("Score:")
+    score.forEach { (player, value) ->
+        print(" ${player ?: "Draws"}=$value ")
+    }
+    println()
+}
