@@ -4,6 +4,7 @@ import isel.tds.galo.model.Game
 import isel.tds.galo.model.newBoard
 import isel.tds.galo.model.play
 import isel.tds.galo.model.toPosition
+import isel.tds.galo.storage.Storage
 import isel.tds.galo.storage.TextFileStorage
 import isel.tds.galo.view.showScore
 
@@ -23,7 +24,7 @@ object PlayCommand : Command() {
     }
 }
 
-fun getCommands(storage: TextFileStorage<String, Game>): Map<String, Command> = mapOf(
+fun getCommands(storage: Storage<String, Game>): Map<String, Command> = mapOf(
     "NEW" to object : Command() {
         override fun execute(args: List<String>, game: Game): Game = game.newBoard()
     },
