@@ -1,28 +1,25 @@
 package isel.tds.galo
 
-import isel.tds.galo.model.Game
-import isel.tds.galo.model.newBoard
-import isel.tds.galo.model.play
-import isel.tds.galo.model.toPosition
+import isel.tds.galo.model.*
 import isel.tds.galo.storage.Storage
 import isel.tds.galo.storage.TextFileStorage
 import isel.tds.galo.view.showScore
 
-abstract class Command {
-    open val isToFinish: Boolean = false
-    open fun execute(args: List<String>, game: Game): Game = throw IllegalStateException("Game over")
+class Command (
+    val isToFinish: Boolean = false,
+    val execute :(args: List<String>, clash: Clash)-> Clash =
+        { _, _ -> throw IllegalStateException("Game over")}
+)
 
-}
 
-object PlayCommand : Command() {
-    override fun execute(args: List<String>, game: Game): Game {
-        checkNotNull(game) { "Game not started" }
+fun playCommand() = Command(){ args, clash ->
+        check(clash is ClashRun) { "Game not started" }
 
         val arg = requireNotNull(args.firstOrNull()) { "Missing index" }
         val playIdx = requireNotNull(arg.toIntOrNull()) { "Invalid index $arg" }
-        return game.play(playIdx.toPosition())
+        clash.play(playIdx.toPosition())
     }
-}
+
 
 fun getCommands(storage: Storage<String, Game>): Map<String, Command> = mapOf(
     "NEW" to object : Command() {
