@@ -12,18 +12,16 @@ import java.lang.IllegalArgumentException
 fun main() {
 
     MongoDriver("galo").use{ driver ->
-
-
     //    val storage = TextFileStorage<String, Game>("saves", GameSerializer)
-        val storage = MongoStorage<String, Game>("saves", driver, GameSerializer)
+        val storage = MongoStorage<String, Game>("games", driver, GameSerializer)
         var clash = Clash(storage)
         val commands = getCommands(storage)
         while (true) {
             val (nameCmd, args) = readCommandLine()
             val cmd = commands[nameCmd]
             try {
-                if (cmd!!.isToFinish) break
-                clash = cmd.execute(args, clash)
+                clash = cmd!!.execute(clash, args)
+                if (cmd.isToFinish) break
 
             } catch (e: IllegalArgumentException) {
                 println(e.message)

@@ -7,47 +7,46 @@ import isel.tds.galo.view.showScore
 
 class Command (
     val isToFinish: Boolean = false,
-    val execute :(args: List<String>, clash: Clash)-> Clash =
-        { _, _ -> throw IllegalStateException("Game over")}
+    val execute :Clash.(args: List<String>)-> Clash =
+        { _ -> throw IllegalStateException("Game over")}
 )
 
-
-fun playCommand() = Command(){ args, clash ->
-        check(clash is ClashRun) { "Game not started" }
+fun playCommand() = Command{ args ->
+        check(this is ClashRun) { "Game not started" }
 
         val arg = requireNotNull(args.firstOrNull()) { "Missing index" }
         val playIdx = requireNotNull(arg.toIntOrNull()) { "Invalid index $arg" }
-        clash.play(playIdx.toPosition())
+        play(playIdx.toPosition())
     }
 
 
 fun getCommands(storage: Storage<String, Game>): Map<String, Command> = mapOf(
-    "NEW" to object : Command() {
-        override fun execute(args: List<String>, game: Game): Game = game.newBoard()
-    },
-    "EXIT" to object : Command() {
-        override val isToFinish: Boolean = true
-    },
-    "PLAY" to PlayCommand,
-    "SAVE" to object : Command() {
-        override fun execute(args: List<String>, game: Game): Game {
-            require(args.isNotEmpty()) { "Missing name" }
-            requireNotNull(game) { "Game not started" }
-            val name = args[0]
-            require(name.isNotEmpty()) { "Name must not be empty" }
-            storage.create(name, game)
-            return game
+    "EXIT" to Command(isToFinish=true) {
+        _ ->
+        this.also {
+            it.deleteIfIsOwner()
         }
     },
-    "SCORE" to object: Command() {
-        override fun execute(args: List<String>, game: Game): Game =
-            game.also { it.showScore() }
+    "PLAY" to playCommand(),
+    "SCORE" to Command() {_ ->
+        check(this is ClashRun) { "Game not started" }
+        this.also { it.game.showScore() }
     },
-    "LOAD" to object : Command() {
-        override fun execute(args: List<String>, game: Game): Game {
-            val name = requireNotNull(args.firstOrNull()) { "Missing name" }
-            return checkNotNull(storage.read(name)) { "Game $name not found" }
-        }
+    "CREATE" to Command() { args ->
+        val name = requireNotNull(args.firstOrNull()) { "Missing name" }
+        startClash(name)
     },
-
+    "JOIN" to Command() { args ->
+        val name = requireNotNull(args.firstOrNull()) { "Missing name" }
+        joinClash(name)
+    },
+    "REFRESH" to Command() { _ ->
+        check(this is ClashRun) { "Game not started" }
+        refreshClash()
+    }
 )
+
+
+
+
+
