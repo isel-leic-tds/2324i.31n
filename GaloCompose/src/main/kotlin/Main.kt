@@ -1,9 +1,8 @@
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.Button
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -11,50 +10,134 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.application
-import isel.tds.galo.model.Player
+import androidx.compose.ui.window.*
+import isel.tds.galo.model.*
+
+val CELL_SIDE = 100.dp       // Size of each cell
+val GRID_THICKNESS = 5.dp    // Thickness of grid lines
+val BOARD_SIDE = CELL_SIDE * BOARD_SIZE + GRID_THICKNESS * (BOARD_SIZE-1)
 
 @Composable
 @Preview
-fun App() {
-    var text by remember { mutableStateOf("Hello, World!") }
-
+fun FrameWindowScope.App(onExit: ()->Unit) {
+    var board by remember { mutableStateOf(Board()) }
+    MenuBar {
+        Menu("Game") {
+            Item("New Game", onClick = { board = Board() })
+            Item("Exit", onClick = onExit)
+        }
+    }
     MaterialTheme {
-//        Button(onClick = {
-//            text = "Hello, Desktop!"
-//        }) {
-//            Text(text)
-//        }
-        PlayerView(null)
+        Column {
+            BoardView(board.boardCells){pos ->
+                if(board is BoardRun)board = board.play(pos)
+            }
+            StatusBar(board)
+        }
     }
 }
 
 @Composable
-fun PlayerView(player: Player?){
-    val modifier = Modifier
-        .size(100.dp)
-        .background(color = Color.White)
+fun StatusBar(board: Board){
+    Row(
+        modifier = Modifier
+            .background(Color.LightGray)
+            .width(BOARD_SIDE)
+            .height(50.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        val (txt, player) = when(board){
+            is BoardRun -> "Turn:" to board.turn
+            is BoardWin -> "Winner:" to board.winner
+            is BoardDraw -> "Draw" to null
+        }
 
-    if(player == null) {
-        Box(modifier)
-    }else {
+        Text(txt, style = MaterialTheme.typography.h4)
+        if(player != null)
+            Cell(player, size = 50.dp, color = Color.LightGray)
+    }
+}
+
+@Composable
+fun BoardView(boardCells: BoardCells,
+              onClick: (Position)->Unit = { _ ->  }) {
+    Column(
+        modifier = Modifier
+            .size(BOARD_SIDE)
+            .background(color = Color.Black),
+        verticalArrangement = Arrangement.SpaceBetween
+    ){
+        repeat(BOARD_SIZE){row ->
+            Row(
+                modifier = Modifier.fillMaxWidth().height(CELL_SIDE),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                repeat(BOARD_SIZE){col ->
+                    val pos = Position(row, col)
+                    Cell( boardCells[pos])
+                    {
+                        onClick(pos)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun Cell(
+    player: Player?,
+    size: Dp = CELL_SIDE,
+    color: Color = Color.White,
+    onClick: ()->Unit={}) {
+    val modifier = Modifier
+        .size(size)
+        .background(color = color)
+
+    if (player == null) {
+        Box(modifier.clickable(onClick = onClick))
+    } else {
         val filename = when (player) {
             Player.X -> "cross.png"
             Player.O -> "circle.png"
         }
-        Image( painter = painterResource(filename),
+        Image(
+            painter = painterResource(filename),
             contentDescription = "Player $player",
-            modifier= modifier)
+            modifier = modifier
+        )
     }
 }
 
 fun main() = application {
-    Window(onCloseRequest = ::exitApplication) {
-        App()
+    Window(
+        onCloseRequest = ::exitApplication,
+        title = "Jogo do Galo",
+        state = WindowState(size = DpSize.Unspecified)
+    ) {
+        App(::exitApplication)
+    }
+}
+
+@Composable
+@Preview
+fun testPreview() {
+    Column {
+//        Cell(Player.X)
+//        Cell(null)
+//        Cell(Player.O)
+        val board = Board()
+            .play(1.toPosition())
+            .play(3.toPosition())
+            .play(5.toPosition())
+        BoardView(board.boardCells)
     }
 }
