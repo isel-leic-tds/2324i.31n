@@ -3,8 +3,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,25 +26,50 @@ val BOARD_SIDE = CELL_SIDE * BOARD_SIZE + GRID_THICKNESS * (BOARD_SIZE-1)
 @Composable
 @Preview
 fun FrameWindowScope.App(onExit: ()->Unit) {
-    var board by remember { mutableStateOf(Board()) }
+    var game by remember { mutableStateOf(Game()) }
+    var showScore by remember { mutableStateOf(false) }
     MenuBar {
         Menu("Game") {
-            Item("New Game", onClick = { board = Board() })
+            Item("New Game", onClick = { game = game.newBoard() })
+            Item("Show Score", onClick = { showScore = true })
             Item("Exit", onClick = onExit)
         }
     }
     MaterialTheme {
         Column {
-            BoardView(board.boardCells){pos ->
-                if(board is BoardRun)board = board.play(pos)
+            BoardView(game.board?.boardCells){pos ->
+                if(game.board is BoardRun)game = game.play(pos)
             }
-            StatusBar(board)
+            StatusBar(game.board)
         }
+        if (showScore) ScoreDialog(game.score) { showScore = false }
     }
 }
+@OptIn(ExperimentalMaterialApi::class, ExperimentalStdlibApi::class)
+@Composable
+fun ScoreDialog(score: Score, closeDialog: () -> Unit) = AlertDialog(
+    onDismissRequest = closeDialog,
+    confirmButton = { TextButton(onClick = closeDialog){Text("Close")} },
+    text = {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Player.entries.forEach { player ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Cell(player, size = 20.dp)
+                        Text(" - ${score[player]}", style = MaterialTheme.typography.h4)
+                    }
+                }
+                Text("Draw - ${score[null]}", style = MaterialTheme.typography.h4)
+            }
+        }
+    }
+)
 
 @Composable
-fun StatusBar(board: Board){
+fun StatusBar(board: Board?){
     Row(
         modifier = Modifier
             .background(Color.LightGray)
@@ -58,6 +82,7 @@ fun StatusBar(board: Board){
             is BoardRun -> "Turn:" to board.turn
             is BoardWin -> "Winner:" to board.winner
             is BoardDraw -> "Draw" to null
+            null -> "Game not started" to null
         }
 
         Text(txt, style = MaterialTheme.typography.h4)
@@ -67,7 +92,7 @@ fun StatusBar(board: Board){
 }
 
 @Composable
-fun BoardView(boardCells: BoardCells,
+fun BoardView(boardCells: BoardCells?,
               onClick: (Position)->Unit = { _ ->  }) {
     Column(
         modifier = Modifier
@@ -82,7 +107,7 @@ fun BoardView(boardCells: BoardCells,
             ) {
                 repeat(BOARD_SIZE){col ->
                     val pos = Position(row, col)
-                    Cell( boardCells[pos])
+                    Cell( boardCells?.get(pos))
                     {
                         onClick(pos)
                     }
