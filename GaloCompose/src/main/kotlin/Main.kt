@@ -5,10 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,6 +15,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
 import isel.tds.galo.model.*
+import isel.tds.galo.viewmodel.AppViewModel
 
 val CELL_SIDE = 100.dp       // Size of each cell
 val GRID_THICKNESS = 5.dp    // Thickness of grid lines
@@ -26,23 +24,21 @@ val BOARD_SIDE = CELL_SIDE * BOARD_SIZE + GRID_THICKNESS * (BOARD_SIZE-1)
 @Composable
 @Preview
 fun FrameWindowScope.App(onExit: ()->Unit) {
-    var game by remember { mutableStateOf(Game()) }
-    var showScore by remember { mutableStateOf(false) }
+    val vm = remember { AppViewModel() }
+
     MenuBar {
         Menu("Game") {
-            Item("New Game", onClick = { game = game.newBoard() })
-            Item("Show Score", onClick = { showScore = true })
+            Item("New Game", onClick = vm::newGame)
+            Item("Show Score", onClick = vm::showScore)
             Item("Exit", onClick = onExit)
         }
     }
     MaterialTheme {
         Column {
-            BoardView(game.board?.boardCells){pos ->
-                if(game.board is BoardRun)game = game.play(pos)
-            }
-            StatusBar(game.board)
+            BoardView(vm.game.board?.boardCells, onClick=vm::play)
+            StatusBar(vm.game.board)
         }
-        if (showScore) ScoreDialog(game.score) { showScore = false }
+        if (vm.viewScore) ScoreDialog(vm.game.score, vm::hideScore)
     }
 }
 @OptIn(ExperimentalMaterialApi::class, ExperimentalStdlibApi::class)
