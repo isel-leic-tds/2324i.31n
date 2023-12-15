@@ -24,17 +24,17 @@ val BOARD_SIDE = CELL_SIDE * BOARD_SIZE + GRID_THICKNESS * (BOARD_SIZE-1)
 
 @Composable
 @Preview
-fun FrameWindowScope.App(driver: MongoDriver, onExit: () -> Unit) {
+fun FrameWindowScope.App(driver: MongoDriver, exitFunction: () -> Unit) {
     val vm = remember { AppViewModel(driver) }
 
     MenuBar {
         Menu("Game") {
             Item("New Game", onClick = vm::showNewGameDialog)
             Item("Join Game", onClick = vm::showJoinGameDialog)
-            Item("Refresh", onClick = vm::refreshGame)
-            Item("New Board", onClick = vm::newBoard)
-            Item("Show Score", onClick = vm::showScore)
-            Item("Exit", onClick = onExit)
+            Item("Refresh", enabled = vm.hasClash, onClick = vm::refreshGame)
+            Item("New Board", enabled= vm.newAvailable, onClick = vm::newBoard)
+            Item("Show Score", enabled = vm.hasClash, onClick = vm::showScore)
+            Item("Exit", onClick =  { vm.exit(); exitFunction() })
         }
     }
     MaterialTheme {

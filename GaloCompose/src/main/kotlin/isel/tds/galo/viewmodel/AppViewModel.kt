@@ -17,6 +17,8 @@ class AppViewModel(driver: MongoDriver) {
 
     val board: Board? get() = (clash as? ClashRun)?.game?.board
     val me: Player? get() = (clash as? ClashRun)?.me
+    val hasClash: Boolean get() = clash is ClashRun
+    val newAvailable: Boolean get() = clash.canNewBoard()
 
     var viewScore by mutableStateOf(false)
         private set
@@ -88,4 +90,6 @@ class AppViewModel(driver: MongoDriver) {
 
     enum class InputType(val txt: String)
     { NEW("Start"), JOIN("Join") }
+
+    fun exit() { clash.deleteIfIsOwner() }
 }

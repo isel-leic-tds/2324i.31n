@@ -48,3 +48,5 @@ fun Clash.newBoard():Clash{
     }
     return ClashRun(storage,id,me,newGame)
 }
+
+fun Clash.canNewBoard() = this is ClashRun && game.board is BoardWin
