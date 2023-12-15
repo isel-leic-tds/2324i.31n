@@ -4,8 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -15,7 +14,9 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
 import isel.tds.galo.model.*
+import isel.tds.galo.mongo.MongoDriver
 import isel.tds.galo.viewmodel.AppViewModel
+import isel.tds.galo.viewmodel.AppViewModel.InputType
 
 val CELL_SIDE = 100.dp       // Size of each cell
 val GRID_THICKNESS = 5.dp    // Thickness of grid lines
@@ -23,24 +24,89 @@ val BOARD_SIDE = CELL_SIDE * BOARD_SIZE + GRID_THICKNESS * (BOARD_SIZE-1)
 
 @Composable
 @Preview
-fun FrameWindowScope.App(onExit: ()->Unit) {
-    val vm = remember { AppViewModel() }
+fun FrameWindowScope.App(driver: MongoDriver, onExit: () -> Unit) {
+    val vm = remember { AppViewModel(driver) }
 
     MenuBar {
         Menu("Game") {
-            Item("New Game", onClick = vm::newGame)
+            Item("New Game", onClick = vm::showNewGameDialog)
+            Item("Join Game", onClick = vm::showJoinGameDialog)
+            Item("Refresh", onClick = vm::refreshGame)
+            Item("New Board", onClick = vm::newBoard)
             Item("Show Score", onClick = vm::showScore)
             Item("Exit", onClick = onExit)
         }
     }
     MaterialTheme {
         Column {
-            BoardView(vm.game.board?.boardCells, onClick=vm::play)
-            StatusBar(vm.game.board)
+            BoardView(vm.board?.boardCells, onClick=vm::play)
+            StatusBar(vm.board, vm.me)
         }
-        if (vm.viewScore) ScoreDialog(vm.game.score, vm::hideScore)
+        if (vm.viewScore) ScoreDialog(vm.score, vm::hideScore)
+        vm.inputType?.let {
+            StartOrJoinDialog(
+                type = it,
+                onCancel = vm::cancelInput,
+                onAction = if (it == InputType.NEW) vm::newGame else vm::joinGame
+            )
+        }
+        vm.errorMessage?.let { ErrorDialog(it, onClose = vm::hideError) }
     }
 }
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun DialogBase(
+    title: String,
+    onClose: ()->Unit,
+    content: @Composable ()->Unit
+) = AlertDialog(
+    onDismissRequest = onClose,
+    title = { Text(title, style = MaterialTheme.typography.h4) },
+    text = content,
+    confirmButton = { TextButton(onClick = onClose) { Text("Close") } }
+)
+
+
+@Composable
+fun ErrorDialog(message: String, onClose: ()->Unit) =
+    DialogBase("Error", onClose) {
+        Text(message, style = MaterialTheme.typography.h6)
+    }
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun StartOrJoinDialog(
+    type: InputType,
+    onCancel: ()->Unit,
+    onAction: (String)->Unit) {
+    var name by remember { mutableStateOf("") }  // Name in edition
+    AlertDialog(
+        onDismissRequest = onCancel,
+        title = {
+            Text(
+                text = "Name to ${type.txt}",
+                style = MaterialTheme.typography.h5
+            )
+        },
+        text = {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Name of game") }
+            )
+        },
+        confirmButton = {
+            TextButton(enabled = true,//Name.isValid(name),
+                onClick = { onAction(name)}//Name(name)) }
+            ) { Text(type.txt) }
+        },
+        dismissButton = {
+            TextButton(onClick = onCancel){ Text("cancel") }
+        }
+    )
+
+}
+
 @OptIn(ExperimentalMaterialApi::class, ExperimentalStdlibApi::class)
 @Composable
 fun ScoreDialog(score: Score, closeDialog: () -> Unit) = AlertDialog(
@@ -65,7 +131,7 @@ fun ScoreDialog(score: Score, closeDialog: () -> Unit) = AlertDialog(
 )
 
 @Composable
-fun StatusBar(board: Board?){
+fun StatusBar(board: Board?, me: Player?){
     Row(
         modifier = Modifier
             .background(Color.LightGray)
@@ -74,6 +140,11 @@ fun StatusBar(board: Board?){
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
+        me?.let{
+            Text("You ", style = MaterialTheme.typography.h4)
+            Cell(player = it, size = 50.dp, color = Color.LightGray)
+            Spacer(Modifier.width(30.dp))
+        }
         val (txt, player) = when(board){
             is BoardRun -> "Turn:" to board.turn
             is BoardWin -> "Winner:" to board.winner
@@ -138,15 +209,18 @@ fun Cell(
     }
 }
 
-fun main() = application {
-    Window(
-        onCloseRequest = ::exitApplication,
-        title = "Jogo do Galo",
-        state = WindowState(size = DpSize.Unspecified)
-    ) {
-        App(::exitApplication)
+fun main() =
+    MongoDriver("galo").use { driver ->
+        application {
+            Window(
+                onCloseRequest = ::exitApplication,
+                title = "Jogo do Galo",
+                state = WindowState(size = DpSize.Unspecified)
+            ) {
+                App(driver, ::exitApplication)
+            }
+        }
     }
-}
 
 @Composable
 @Preview
