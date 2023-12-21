@@ -40,10 +40,10 @@ fun getCommands(storage: Storage<String, Game>): Map<String, Command> = mapOf(
         val name = requireNotNull(args.firstOrNull()) { "Missing name" }
         joinClash(name)
     },
-    "REFRESH" to Command() { _ ->
-        check(this is ClashRun) { "Game not started" }
-        refreshClash()
-    }
+//    "REFRESH" to Command() { _ ->
+//        check(this is ClashRun) { "Game not started" }
+//        refreshClash()
+//    }
 )
 
 

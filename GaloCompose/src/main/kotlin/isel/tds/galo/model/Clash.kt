@@ -1,6 +1,8 @@
 package isel.tds.galo.model
 
 import isel.tds.galo.storage.Storage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 open class Clash(val storage: Storage<String, Game>)
 
@@ -35,11 +37,34 @@ fun Clash.joinClash(name: String): Clash {
     return ClashRun( storage, name, Player.O, game)
 }
 
-fun Clash.refreshClash(): Clash {
+suspend fun Clash.refreshClash(): Clash {
     check( this is ClashRun ) { "Clash not started" }
-    val game = storage.read(id) ?: error("Clash $id not found")
-    return ClashRun( storage, id, me, game)
+    val gameAfter = storage.slowRead(id) ?: throw GameDeletedException()
+//    val gameAfter = storage.read(id) ?: throw GameDeletedException()
+    if (game.board == gameAfter.board) throw NoChangesException()
+    return ClashRun( storage, id, me, gameAfter)
 }
+
+
+suspend fun Storage<String,Game>.slowRead(key: String): Game? {
+    fun log(label: String) {
+        println("$label: thread=${java.lang.Thread.currentThread().name} " +
+                "time=${java.lang.System.currentTimeMillis()/1000}")
+    }
+    log("slowRead 1")
+    val res = withContext(Dispatchers.IO){
+        log("slowRead 2")
+        java.lang.Thread.sleep(5000)
+        log("slowRead 3")
+        read(key)
+    }
+    log("slowRead 4")
+    return res
+}
+
+class NoChangesException : IllegalStateException("No changes")
+class GameDeletedException : IllegalStateException("Game deleted")
+
 
 fun Clash.newBoard():Clash{
     check( this is ClashRun ) { "Clash not started" }

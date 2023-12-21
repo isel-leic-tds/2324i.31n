@@ -7,9 +7,9 @@ import isel.tds.galo.model.*
 import isel.tds.galo.mongo.MongoDriver
 import isel.tds.galo.storage.GameSerializer
 import isel.tds.galo.storage.MongoStorage
+import kotlinx.coroutines.*
 
-class AppViewModel(driver: MongoDriver) {
-
+class AppViewModel(driver: MongoDriver, val scope: CoroutineScope) {
 
 
     private val storage = MongoStorage<String, Game>("games", driver, GameSerializer)
@@ -30,6 +30,12 @@ class AppViewModel(driver: MongoDriver) {
 
     val score: Score get() = (clash as ClashRun).game.score
 
+    private var waitingJob by mutableStateOf<Job?>(null)
+    val isWaiting: Boolean get() = waitingJob != null
+    private val turnAvailable: Boolean
+        get() = (board as? BoardRun)?.turn == me || newAvailable
+
+
     fun newBoard(){
         clash = clash.newBoard()
     }
@@ -44,6 +50,7 @@ class AppViewModel(driver: MongoDriver) {
         } catch (e: Exception) {
             errorMessage = e.message
         }
+        waitForOtherSide()
     }
 
     fun showNewGameDialog() {
@@ -62,7 +69,7 @@ class AppViewModel(driver: MongoDriver) {
         inputType = null
     }
 
-    fun refreshGame() {
+    suspend fun refreshGame() {
         try {
             clash = clash.refreshClash()
         } catch (e: Exception) {
@@ -71,6 +78,7 @@ class AppViewModel(driver: MongoDriver) {
     }
 
     fun newGame(gameName: String) {
+        cancelWaiting()
         try {
             clash = clash.startClash(gameName)
             hideNewOrJoinGameDialog()
@@ -80,16 +88,41 @@ class AppViewModel(driver: MongoDriver) {
 
     }
     fun joinGame(gameName: String) {
+        cancelWaiting()
         try {
             clash = clash.joinClash(gameName)
             hideNewOrJoinGameDialog()
         } catch (e: Exception) {
             errorMessage = e.message
         }
+        waitForOtherSide()
     }
 
     enum class InputType(val txt: String)
     { NEW("Start"), JOIN("Join") }
 
-    fun exit() { clash.deleteIfIsOwner() }
+    fun exit() {
+        clash.deleteIfIsOwner()
+        cancelWaiting()
+    }
+
+    private fun cancelWaiting() {
+        waitingJob?.cancel()
+        waitingJob = null
+    }
+    private fun waitForOtherSide() {
+        if (turnAvailable) return
+        waitingJob = scope.launch {
+            do {
+                delay(3000)
+                try { clash = clash.refreshClash() }
+                catch (e: NoChangesException) { /* Ignore */ }
+                catch (e: Exception) {
+                    errorMessage = e.message
+                    if (e is GameDeletedException) clash = Clash(storage)
+                }
+            } while (!turnAvailable)
+            waitingJob = null
+        }
+    }
 }
